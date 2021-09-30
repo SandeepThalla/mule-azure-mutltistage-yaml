@@ -1,0 +1,75 @@
+parameters:
+  - name: environment 
+    type: string
+
+jobs:
+- deployment: 
+  pool:
+    vmImage: 'ubuntu-latest'
+  variables:
+  - group: MuleSoft-${{ parameters.environment }}-Variable-Group
+  - name: MAVEN_CACHE_FOLDER
+    value: $(Pipeline.Workspace)/.m2/repository
+  - name: MAVEN_OPTS
+    value: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+  environment: ${{ parameters.environment }}
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - download: none
+        - task: DownloadPipelineArtifact@2
+          displayName: Download Build Artifacts
+          inputs:
+            patterns: '**'
+            path: '$(Build.sourcesdirectory)'
+        - task: Cache@2
+          inputs:
+            key: $(Build.SourcesDirectory)/drop/pom.xml
+            path: $(MAVEN_CACHE_FOLDER)
+          displayName: Cache Maven local repo
+        - task: DownloadSecureFile@1
+          displayName: 'Download Settings.xml'
+          name: settingsxml
+          inputs:
+            secureFile: 'settings.xml'
+        - task: PowerShell@2
+          displayName: Copy Settings.xml to maven respository
+          inputs:
+            targetType: 'inline'
+            script: |
+              New-Item -Type Directory -Force "${HOME}/.m2"
+              Copy-Item -Force "$(settingsxml.secureFilePath)" "${HOME}/.m2/settings.xml"
+        - task: Bash@3
+          displayName: Get Artifact Name
+          inputs:
+            targetType: 'inline'
+            script: |
+              # Write your commands here                   
+              cd "$(Build.sourcesdirectory)/drop/target"
+              echo "##vso[task.setvariable variable=artifactName]`ls *.jar`"
+        - task: Bash@3
+          displayName: Generate Application Name
+          inputs:
+            targetType: 'inline'
+            script: |
+              # Write your commands here                   
+              artifactId=`mvn -f $(Build.SourcesDirectory)/drop/pom.xml help:evaluate -Dexpression=project.artifactId -q -DforceStdout | rev | cut -c1- | rev`
+              echo "Artifact ID from pom.xml is $artifactId"
+              appName=`echo ${{ parameters.environment }}-$artifactId | tr '[:upper:]' '[:lower:]'`
+              echo "Application Name generated is $appName"
+              echo "##vso[task.setvariable variable=appName]`echo $appName`"
+        - task: Maven@3
+          displayName: Deploy
+          inputs:
+            mavenPomFile: '$(Build.sourcesdirectory)/drop/pom.xml'
+            mavenOptions: '-Xmx3072m'
+            jdkVersionOption: '1.8'
+            jdkArchitectureOption: 'x64'
+            mavenAuthenticateFeed: true
+            publishJUnitResults: false
+            javaHomeOption: 'JDKVersion'
+            mavenVersionOption: 'Default'
+            effectivePomSkip: true
+            sonarQubeRunAnalysis: false
+            goals: 'mule:deploy $(MAVEN_OPTS) -Dmule.artifact=$(Build.sourcesdirectory)/drop/target/$(artifactName) -DskipMunitTests -DmuleDeploy -Dserver=$(server) -Denvironment=${{ parameters.environment }} -Dworker=$(workers) -DworkerType=$(workerType) -DmuleVersion=$(muleVersion) -DappName=$(appName) -Dregion=$(region)'              
