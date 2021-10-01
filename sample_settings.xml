@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+   <servers>
+      <server>
+         <id>Anypoint</id>
+         <username><<anypoint username>></username>
+         <password><<anypoint password>></password>
+      </server>
+      <server>
+         <id>mulesoft_azure</id>
+         <username><<Azure UserName>></username>
+         <password><<PERSONAL_ACCESS_TOKEN>></password>
+      </server>
+      <server>
+         <id>MuleRepository</id>
+         <!-- Provided by Support -->
+         <username><<username>></username>
+         <password><<password>></password>
+      </server>
+   </servers>
+   <mirrors>
+      <mirror>
+         <id>maven-default-http-blocker</id>
+         <mirrorOf>dummy</mirrorOf>
+         <name>Dummy mirror to override default blocking mirror that blocks http</name>
+         <url>http://0.0.0.0/</url>
+         <blocked>true</blocked>
+      </mirror>
+   </mirrors>
+   <profiles>
+      <profile>
+         <id>Mule</id>
+         <activation>
+            <activeByDefault>true</activeByDefault>
+         </activation>
+         <repositories>
+            <repository>
+               <id>MuleRepository</id>
+               <name>MuleRepository</name>
+               <url>https://repository.mulesoft.org/nexus-ee/content/repositories/releases-ee/</url>
+               <layout>default</layout>
+               <releases>
+                  <enabled>true</enabled>
+               </releases>
+               <snapshots>
+                  <enabled>true</enabled>
+               </snapshots>
+            </repository>
+         </repositories>
+         <pluginRepositories>
+            <pluginRepository>
+               <id>mulesoft-plugin-releases</id>
+               <name>MuleSoft Plugin Releases Repository</name>
+               <url>https://repository.mulesoft.org/nexus/content/repositories/releases/</url>
+               <layout>default</layout>
+            </pluginRepository>
+            <pluginRepository>
+               <id>mulesoft-plugin-snapshots</id>
+               <name>MuleSoft Plugin Snapshots Repository</name>
+               <url>https://repository.mulesoft.org/nexus/content/repositories/snapshots/</url>
+               <layout>default</layout>
+            </pluginRepository>
+         </pluginRepositories>
+      </profile>
+   </profiles>
+   <pluginGroups>
+      <pluginGroup>org.mule.tools</pluginGroup>
+   </pluginGroups>
+</settings>
